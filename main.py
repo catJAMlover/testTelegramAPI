@@ -1,21 +1,20 @@
 from threading import Thread
+import datetime
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram import Client, types
 
 
-
-
-CHANNEL_ID = #main channel id
-CHANNEL_ID_SEC = #channel for replies id
+CHANNEL_ID = 
+CHANNEL_ID_SEC = 
 
 app = Client(
     "test_app",
-    api_id= #place your api_id here,
-    api_hash= #place your api_hash here
+    api_id=,
+    api_hash=''
 )
 
-bot = telebot.TeleBot(#bot token)
+bot = telebot.TeleBot('')
 
 inline_keyboard = InlineKeyboardMarkup()
 btn1 = InlineKeyboardButton(text="Да", callback_data='yes_button')
@@ -49,13 +48,16 @@ def new(client: Client, message: types.Message):
     if message.chat.id == CHANNEL_ID:
         print("\nПолучено новое сообщение с ID:", message.id)
         print("Текст:", message.text)
+        print("Дата:", message.date)
         bot.edit_message_reply_markup(CHANNEL_ID, message.id, reply_markup=inline_keyboard)
 
     if message.chat.id == CHANNEL_ID_SEC and message.reply_to_message_id != None:
         print("\nПолучен новый ответ с ID:", message.id)
         print("Ответ на сообщение с ID:", split_str_id(str(message.reply_to_message)))
         print("Текст:", message.text)
+        print("Дата:", message.date)
         print('От пользователя с ID:', message.from_user.id)
+        print('От пользователя:', message.from_user.first_name)
 
 
 @app.on_edited_message()
@@ -66,24 +68,32 @@ def edit(client: Client, message: types.Message):
     if message.reactions is not None:
         print("\nИзменено сообщение с ID:", message.id)
         print("Получена реакция:", split_str_emoji(str(message.reactions)))
+        print("Дата:", message.date)
+        print('От пользователя:', message.from_user.first_name)
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     if call.data == 'yes_button':
-        print('\nПользователь с ID:', call.from_user.id, '\nДал ответ "Да" \nНа сообщение с ID:',
+        print('\nПользователь с ID:', call.from_user.id, '\nДал ответ: "Да" \nНа сообщение с ID:',
               call.message.message_id)
-        bot.edit_message_reply_markup(CHANNEL_ID, call.message.message_id, None)
+        print('От пользователя:', call.from_user.first_name)
+        bot.edit_message_text(call.message.text + "\nОтвет: Да" + "\nOт пользователя: " + call.from_user.first_name,
+                              CHANNEL_ID, call.message.message_id, reply_markup=None)
+        print("Дата:", datetime.datetime.now().replace(microsecond=0))
 
     if call.data == 'no_button':
-        print('\nПользователь с ID:', call.from_user.id, '\nДал ответ "Нет" \nНа сообщение с ID:',
+        print('\nПользователь с ID:', call.from_user.id, '\nДал ответ: "Нет" \nНа сообщение с ID:',
               call.message.message_id)
-        bot.edit_message_reply_markup(CHANNEL_ID, call.message.message_id, None)
-
+        print('От пользователя:', call.from_user.first_name)
+        bot.edit_message_text(call.message.text + "\nОтвет: Нет" + "\nOт пользователя: " + call.from_user.first_name,
+                              CHANNEL_ID, call.message.message_id, reply_markup=None)
+        print("Дата:", datetime.datetime.utcnow().replace(microsecond=0))
 
 # @app.on_raw_update()
-# async def raw(client, update, users, chats):
-#     print(update)
+# async def raw(client, update, users, chats, message):
+#     if message.chat.id == CHANNEL_ID or message.chat.id == CHANNEL_ID_SEC:
+#         print(update)
 
 if __name__ == '__main__':
     Thread(target=bot_loop, args=(bot,)).start()
